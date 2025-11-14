@@ -14,9 +14,27 @@ func main() {
 	}
 
 	args := os.Args[1:]
+
 	subcommand := args[0]
+	rest := args[1:]
+
+	var err error
 	switch subcommand {
 	case "serve":
-		cmd.RunServer()
+		err = cmd.RunServer(rest)
+	case "add":
+		err = cmd.RunAdd(rest)
+	case "list":
+		err = cmd.RunList(rest)
+	case "get":
+		err = cmd.RunGet(rest)
+	case "delete":
+		err = cmd.RunDelete(rest)
+	default:
+		fmt.Println("Unknown subcommand:", subcommand)
+	}
+	if err != nil {
+		fmt.Println("Error:", err)
+		os.Exit(1)
 	}
 }

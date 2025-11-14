@@ -15,7 +15,7 @@ func NewMux() *http.ServeMux {
 	mux.HandleFunc("GET /bookmarks/{id}", getBookmarksByIdHandler)
 	mux.HandleFunc("POST /bookmarks", postBookmarksHandler)
 	mux.HandleFunc("PUT /bookmarks/{id}", putBookmarksHandler)
-	mux.HandleFunc("DELETE /bookmarks", deleteBookmarksHandler)
+	mux.HandleFunc("DELETE /bookmarks/{id}", deleteBookmarksHandler)
 
 	return mux
 }

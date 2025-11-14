@@ -6,7 +6,7 @@ import (
 	"github.com/t-eckert/fave/web"
 )
 
-func RunServer() {
+func RunServer(args []string) error {
 	mux := web.NewMux()
-	http.ListenAndServe(":8080", mux)
+	return http.ListenAndServe(":8080", mux)
 }
