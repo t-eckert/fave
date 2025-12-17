@@ -387,3 +387,186 @@ func TestHealth(t *testing.T) {
 		t.Errorf("Expected status 'healthy', got '%s'", result["status"])
 	}
 }
+
+// Public Mode Authentication Tests
+
+func TestPublicMode_Disabled_RequiresAuth(t *testing.T) {
+	mockStore := NewMockStore()
+	mockStore.Seed(map[int]internal.Bookmark{1: testBookmark("Test")})
+
+	cfg := testConfig()
+	cfg.AuthPassword = "secret123"
+	cfg.Public = false
+
+	srv := createTestServer(t, mockStore, cfg)
+	handler := srv.SetupRoutes()
+
+	tests := []struct {
+		name   string
+		method string
+		path   string
+	}{
+		{"GET /bookmarks", http.MethodGet, "/bookmarks"},
+		{"GET /bookmarks/1", http.MethodGet, "/bookmarks/1"},
+		{"POST /bookmarks", http.MethodPost, "/bookmarks"},
+		{"PUT /bookmarks/1", http.MethodPut, "/bookmarks/1"},
+		{"DELETE /bookmarks/1", http.MethodDelete, "/bookmarks/1"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name+" without auth", func(t *testing.T) {
+			req := httptest.NewRequest(tt.method, tt.path, nil)
+			w := httptest.NewRecorder()
+
+			handler.ServeHTTP(w, req)
+
+			if w.Code != http.StatusUnauthorized {
+				t.Errorf("Expected status %d for %s %s without auth, got %d",
+					http.StatusUnauthorized, tt.method, tt.path, w.Code)
+			}
+		})
+
+		t.Run(tt.name+" with auth", func(t *testing.T) {
+			req := httptest.NewRequest(tt.method, tt.path, nil)
+			req.SetBasicAuth("user", "secret123")
+			w := httptest.NewRecorder()
+
+			handler.ServeHTTP(w, req)
+
+			if w.Code == http.StatusUnauthorized {
+				t.Errorf("Expected success for %s %s with auth, got %d",
+					tt.method, tt.path, w.Code)
+			}
+		})
+	}
+}
+
+func TestPublicMode_Enabled_GETNoAuth_WritesRequireAuth(t *testing.T) {
+	mockStore := NewMockStore()
+	mockStore.Seed(map[int]internal.Bookmark{1: testBookmark("Test")})
+
+	cfg := testConfig()
+	cfg.AuthPassword = "secret123"
+	cfg.Public = true
+
+	srv := createTestServer(t, mockStore, cfg)
+	handler := srv.SetupRoutes()
+
+	// GET requests should work without auth
+	getTests := []struct {
+		name string
+		path string
+	}{
+		{"GET /bookmarks", "/bookmarks"},
+		{"GET /bookmarks/1", "/bookmarks/1"},
+	}
+
+	for _, tt := range getTests {
+		t.Run(tt.name+" without auth", func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodGet, tt.path, nil)
+			w := httptest.NewRecorder()
+
+			handler.ServeHTTP(w, req)
+
+			if w.Code == http.StatusUnauthorized {
+				t.Errorf("Expected success for %s without auth in public mode, got %d",
+					tt.path, w.Code)
+			}
+		})
+	}
+
+	// Write operations should still require auth
+	writeTests := []struct {
+		name   string
+		method string
+		path   string
+		body   string
+	}{
+		{"POST /bookmarks", http.MethodPost, "/bookmarks", `{"name":"Test","url":"https://test.com"}`},
+		{"PUT /bookmarks/1", http.MethodPut, "/bookmarks/1", `{"name":"Updated","url":"https://test.com"}`},
+		{"DELETE /bookmarks/1", http.MethodDelete, "/bookmarks/1", ""},
+	}
+
+	for _, tt := range writeTests {
+		t.Run(tt.name+" without auth", func(t *testing.T) {
+			var body *bytes.Reader
+			if tt.body != "" {
+				body = bytes.NewReader([]byte(tt.body))
+			} else {
+				body = bytes.NewReader([]byte{})
+			}
+
+			req := httptest.NewRequest(tt.method, tt.path, body)
+			w := httptest.NewRecorder()
+
+			handler.ServeHTTP(w, req)
+
+			if w.Code != http.StatusUnauthorized {
+				t.Errorf("Expected status %d for %s %s without auth in public mode, got %d",
+					http.StatusUnauthorized, tt.method, tt.path, w.Code)
+			}
+		})
+
+		t.Run(tt.name+" with auth", func(t *testing.T) {
+			var body *bytes.Reader
+			if tt.body != "" {
+				body = bytes.NewReader([]byte(tt.body))
+			} else {
+				body = bytes.NewReader([]byte{})
+			}
+
+			req := httptest.NewRequest(tt.method, tt.path, body)
+			req.SetBasicAuth("user", "secret123")
+			w := httptest.NewRecorder()
+
+			handler.ServeHTTP(w, req)
+
+			if w.Code == http.StatusUnauthorized {
+				t.Errorf("Expected success for %s %s with auth, got %d",
+					tt.method, tt.path, w.Code)
+			}
+		})
+	}
+}
+
+func TestPublicMode_HealthAlwaysAccessible(t *testing.T) {
+	tests := []struct {
+		name     string
+		password string
+		public   bool
+	}{
+		{"no auth, public disabled", "", false},
+		{"with auth, public disabled", "secret123", false},
+		{"with auth, public enabled", "secret123", true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockStore := NewMockStore()
+			cfg := testConfig()
+			cfg.AuthPassword = tt.password
+			cfg.Public = tt.public
+
+			srv := createTestServer(t, mockStore, cfg)
+			handler := srv.SetupRoutes()
+
+			req := httptest.NewRequest(http.MethodGet, "/health", nil)
+			w := httptest.NewRecorder()
+
+			handler.ServeHTTP(w, req)
+
+			if w.Code != http.StatusOK {
+				t.Errorf("Expected status %d for /health, got %d", http.StatusOK, w.Code)
+			}
+
+			var result map[string]string
+			if err := json.NewDecoder(w.Body).Decode(&result); err != nil {
+				t.Fatalf("Failed to decode response: %v", err)
+			}
+
+			if result["status"] != "healthy" {
+				t.Errorf("Expected status 'healthy', got '%s'", result["status"])
+			}
+		})
+	}
+}
