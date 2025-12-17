@@ -7,10 +7,27 @@ import (
 )
 
 func RunList(args []string) error {
-	client := client.New(host)
-	bookmarks, err := client.List()
+	// Load configuration
+	cfg, err := LoadClientConfig(args)
 	if err != nil {
 		return err
+	}
+
+	// Create client
+	c, err := client.New(cfg)
+	if err != nil {
+		return fmt.Errorf("failed to create client: %w", err)
+	}
+	defer c.Close()
+
+	bookmarks, err := c.List()
+	if err != nil {
+		return err
+	}
+
+	if len(bookmarks) == 0 {
+		fmt.Println("No bookmarks found")
+		return nil
 	}
 
 	for id, bookmark := range bookmarks {

@@ -1,5 +1,8 @@
 data/
 
+# Ignore the binary at the root
+fave
+
 # Binaries for programs and plugins
 *.exe
 *.exe~

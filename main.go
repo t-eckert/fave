@@ -10,7 +10,7 @@ import (
 const usage = `fave
 A tiny CLI for saving your bookmarks.
 
-Usage: fave <subcommand>
+Usage: fave <subcommand> [flags]
 
 Available subcommands:
 (Server)
@@ -18,8 +18,14 @@ Available subcommands:
 (Client)
 	add	Add a bookmark.
 	list	List all bookmarks.
-	get	Get a bookmark.
-	delete	Delete a bookmark.`
+	get	Get a bookmark by ID.
+	update	Update an existing bookmark.
+	delete	Delete a bookmark by ID.
+	health	Check server health.
+
+Common flags:
+	--host		Server URL (default: http://localhost:8080)
+	--password	Authentication password`
 
 func main() {
 	if len(os.Args) < 2 {
@@ -42,8 +48,12 @@ func main() {
 		err = cmd.RunList(rest)
 	case "get":
 		err = cmd.RunGet(rest)
+	case "update":
+		err = cmd.RunUpdate(rest)
 	case "delete":
 		err = cmd.RunDelete(rest)
+	case "health":
+		err = cmd.RunHealth(rest)
 	default:
 		fmt.Println("Unknown subcommand:", subcommand)
 	}

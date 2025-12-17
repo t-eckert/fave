@@ -4,12 +4,13 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/t-eckert/fave/internal"
 	"github.com/t-eckert/fave/internal/client"
 )
 
-func RunDelete(args []string) error {
-	if len(args) < 1 {
-		return fmt.Errorf("usage: fave delete [flags] <id>")
+func RunUpdate(args []string) error {
+	if len(args) < 3 {
+		return fmt.Errorf("usage: fave update [flags] <id> <name> <url>")
 	}
 
 	// Parse ID
@@ -19,7 +20,7 @@ func RunDelete(args []string) error {
 	}
 
 	// Load configuration
-	cfg, err := LoadClientConfig(args[1:])
+	cfg, err := LoadClientConfig(args[3:])
 	if err != nil {
 		return err
 	}
@@ -31,12 +32,22 @@ func RunDelete(args []string) error {
 	}
 	defer c.Close()
 
-	err = c.Delete(id)
+	name := args[1]
+	url := args[2]
+
+	bookmark := internal.Bookmark{
+		Url:         url,
+		Name:        name,
+		Description: "",
+		Tags:        []string{},
+	}
+
+	err = c.Update(id, bookmark)
 	if err != nil {
 		return err
 	}
 
-	fmt.Printf("Bookmark %d deleted\n", id)
+	fmt.Printf("Bookmark %d updated\n", id)
 
 	return nil
 }

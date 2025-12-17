@@ -7,12 +7,23 @@ import (
 	"github.com/t-eckert/fave/internal/client"
 )
 
-var host = "http://localhost:8080"
-
 func RunAdd(args []string) error {
 	if len(args) < 2 {
-		return fmt.Errorf("usage: fave add <name> <url>")
+		return fmt.Errorf("usage: fave add [flags] <name> <url>")
 	}
+
+	// Load configuration
+	cfg, err := LoadClientConfig(args[2:])
+	if err != nil {
+		return err
+	}
+
+	// Create client
+	c, err := client.New(cfg)
+	if err != nil {
+		return fmt.Errorf("failed to create client: %w", err)
+	}
+	defer c.Close()
 
 	name := args[0]
 	url := args[1]
@@ -24,13 +35,12 @@ func RunAdd(args []string) error {
 		Tags:        []string{},
 	}
 
-	client := client.New(host)
-
-	id, err := client.Add(bookmark)
+	id, err := c.Add(bookmark)
 	if err != nil {
 		return err
 	}
-	fmt.Println(id)
+
+	fmt.Printf("Bookmark added with ID: %d\n", id)
 
 	return nil
 }
