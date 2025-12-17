@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/t-eckert/fave/cmd/utils"
 	"github.com/t-eckert/fave/internal/client"
 )
 
@@ -19,7 +20,7 @@ func RunGet(args []string) error {
 	}
 
 	// Load configuration
-	cfg, err := LoadClientConfig(args[1:])
+	cfg, err := utils.LoadClientConfig(args[1:])
 	if err != nil {
 		return err
 	}
@@ -36,11 +37,7 @@ func RunGet(args []string) error {
 		return err
 	}
 
-	fmt.Println("id:", id)
-	fmt.Println("name:", bookmark.Name)
-	fmt.Println("url:", bookmark.Url)
-	fmt.Println("description:", bookmark.Description)
-	fmt.Println("tags:", bookmark.Tags)
+	fmt.Println(utils.FormatBookmark(id, bookmark))
 
 	return nil
 }

@@ -3,12 +3,13 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/t-eckert/fave/cmd/utils"
 	"github.com/t-eckert/fave/internal/client"
 )
 
 func RunList(args []string) error {
 	// Load configuration
-	cfg, err := LoadClientConfig(args)
+	cfg, err := utils.LoadClientConfig(args)
 	if err != nil {
 		return err
 	}
@@ -31,11 +32,7 @@ func RunList(args []string) error {
 	}
 
 	for id, bookmark := range bookmarks {
-		fmt.Println("id:", id)
-		fmt.Println("name:", bookmark.Name)
-		fmt.Println("url:", bookmark.Url)
-		fmt.Println("description:", bookmark.Description)
-		fmt.Println("tags:", bookmark.Tags)
+		fmt.Println(utils.FormatBookmark(id, &bookmark))
 		fmt.Println("---")
 	}
 

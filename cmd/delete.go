@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/t-eckert/fave/cmd/utils"
 	"github.com/t-eckert/fave/internal/client"
 )
 
@@ -19,7 +20,7 @@ func RunDelete(args []string) error {
 	}
 
 	// Load configuration
-	cfg, err := LoadClientConfig(args[1:])
+	cfg, err := utils.LoadClientConfig(args[1:])
 	if err != nil {
 		return err
 	}

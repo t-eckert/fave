@@ -3,12 +3,13 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/t-eckert/fave/cmd/utils"
 	"github.com/t-eckert/fave/internal/client"
 )
 
 func RunHealth(args []string) error {
 	// Load configuration
-	cfg, err := LoadClientConfig(args)
+	cfg, err := utils.LoadClientConfig(args)
 	if err != nil {
 		return err
 	}

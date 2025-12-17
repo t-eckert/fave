@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/t-eckert/fave/cmd/utils"
 	"github.com/t-eckert/fave/internal"
 	"github.com/t-eckert/fave/internal/client"
 )
@@ -20,7 +21,7 @@ func RunUpdate(args []string) error {
 	}
 
 	// Load configuration
-	cfg, err := LoadClientConfig(args[3:])
+	cfg, err := utils.LoadClientConfig(args[3:])
 	if err != nil {
 		return err
 	}

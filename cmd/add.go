@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/t-eckert/fave/cmd/utils"
 	"github.com/t-eckert/fave/internal"
 	"github.com/t-eckert/fave/internal/client"
 )
@@ -13,7 +14,7 @@ func RunAdd(args []string) error {
 	}
 
 	// Load configuration
-	cfg, err := LoadClientConfig(args[2:])
+	cfg, err := utils.LoadClientConfig(args[2:])
 	if err != nil {
 		return err
 	}
@@ -28,12 +29,7 @@ func RunAdd(args []string) error {
 	name := args[0]
 	url := args[1]
 
-	bookmark := internal.Bookmark{
-		Url:         url,
-		Name:        name,
-		Description: "",
-		Tags:        []string{},
-	}
+	bookmark := internal.NewBookmark(url, name, "", []string{})
 
 	id, err := c.Add(bookmark)
 	if err != nil {
