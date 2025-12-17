@@ -47,23 +47,36 @@ func DefaultConfig() Config {
 func LoadConfig(args []string) (Config, error) {
 	cfg := DefaultConfig()
 
-	// 1. Try to load from config file first (if specified)
-	var configFile string
+	// Create FlagSet with all flags
 	fs := flag.NewFlagSet("serve", flag.ContinueOnError)
-	fs.StringVar(&configFile, "config", "", "Path to config file (JSON)")
+	configFile := fs.String("config", "", "Path to config file (JSON)")
+	port := fs.String("port", cfg.Port, "Server port")
+	host := fs.String("host", cfg.Host, "Server host")
+	storeFile := fs.String("store-file", cfg.StoreFileName, "Path to bookmarks storage file")
+	password := fs.String("password", cfg.AuthPassword, "Authentication password (empty = no auth)")
+	logLevel := fs.String("log-level", cfg.LogLevel, "Log level (debug, info, warn, error)")
+	logJSON := fs.Bool("log-json", cfg.LogJSON, "Output logs as JSON")
+	snapshotInterval := fs.String("snapshot-interval", cfg.SnapshotInterval, "Snapshot save interval (e.g., 1s, 5s, 1m)")
 
-	// Parse just to get config file path
+	// Parse flags
 	if err := fs.Parse(args); err != nil {
 		return cfg, err
 	}
 
-	if configFile != "" {
-		if err := loadConfigFile(&cfg, configFile); err != nil {
+	// Track which flags were explicitly set
+	explicitFlags := make(map[string]bool)
+	fs.Visit(func(f *flag.Flag) {
+		explicitFlags[f.Name] = true
+	})
+
+	// 1. Load from config file if specified
+	if *configFile != "" {
+		if err := loadConfigFile(&cfg, *configFile); err != nil {
 			return cfg, fmt.Errorf("loading config file: %w", err)
 		}
 	}
 
-	// 2. Apply environment variables
+	// 2. Apply environment variables (override config file)
 	if v := os.Getenv("FAVE_PORT"); v != "" {
 		cfg.Port = v
 	}
@@ -86,18 +99,27 @@ func LoadConfig(args []string) (Config, error) {
 		cfg.SnapshotInterval = v
 	}
 
-	// 3. Apply CLI flags (highest precedence)
-	fs = flag.NewFlagSet("serve", flag.ContinueOnError)
-	fs.StringVar(&cfg.Port, "port", cfg.Port, "Server port")
-	fs.StringVar(&cfg.Host, "host", cfg.Host, "Server host")
-	fs.StringVar(&cfg.StoreFileName, "store-file", cfg.StoreFileName, "Path to bookmarks storage file")
-	fs.StringVar(&cfg.AuthPassword, "password", cfg.AuthPassword, "Authentication password (empty = no auth)")
-	fs.StringVar(&cfg.LogLevel, "log-level", cfg.LogLevel, "Log level (debug, info, warn, error)")
-	fs.BoolVar(&cfg.LogJSON, "log-json", cfg.LogJSON, "Output logs as JSON")
-	fs.StringVar(&cfg.SnapshotInterval, "snapshot-interval", cfg.SnapshotInterval, "Snapshot save interval (e.g., 1s, 5s, 1m)")
-
-	if err := fs.Parse(args); err != nil {
-		return cfg, err
+	// 3. Apply CLI flags (highest precedence) - only if explicitly set
+	if explicitFlags["port"] {
+		cfg.Port = *port
+	}
+	if explicitFlags["host"] {
+		cfg.Host = *host
+	}
+	if explicitFlags["store-file"] {
+		cfg.StoreFileName = *storeFile
+	}
+	if explicitFlags["password"] {
+		cfg.AuthPassword = *password
+	}
+	if explicitFlags["log-level"] {
+		cfg.LogLevel = *logLevel
+	}
+	if explicitFlags["log-json"] {
+		cfg.LogJSON = *logJSON
+	}
+	if explicitFlags["snapshot-interval"] {
+		cfg.SnapshotInterval = *snapshotInterval
 	}
 
 	// Validate
