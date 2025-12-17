@@ -98,7 +98,7 @@ func (s *Server) SetupRoutes() http.Handler {
 
 	// Add auth middleware if password is configured
 	if s.config.AuthPassword != "" {
-		middlewares = append(middlewares, BasicAuthMiddleware(s.config.AuthPassword, s.logger))
+		middlewares = append(middlewares, BasicAuthMiddleware(s.config.AuthPassword, s.config.Public, s.logger))
 	}
 
 	return Chain(mux, middlewares...)

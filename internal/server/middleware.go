@@ -121,11 +121,18 @@ func CORSMiddleware(allowedOrigins []string) Middleware {
 }
 
 // BasicAuthMiddleware implements HTTP Basic Authentication.
-func BasicAuthMiddleware(password string, logger *slog.Logger) Middleware {
+// If publicRead is true, GET requests are allowed without authentication.
+func BasicAuthMiddleware(password string, publicRead bool, logger *slog.Logger) Middleware {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// Skip auth for health endpoint
 			if r.URL.Path == "/health" {
+				next.ServeHTTP(w, r)
+				return
+			}
+
+			// Skip auth for GET requests if public mode is enabled
+			if publicRead && r.Method == http.MethodGet {
 				next.ServeHTTP(w, r)
 				return
 			}

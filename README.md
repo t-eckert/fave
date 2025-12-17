@@ -21,12 +21,6 @@ Fave is a tiny bookmark manager written in Go. There are many like it, but this 
 - Retry logic with exponential backoff
 - Connection pooling and timeouts
 
-### Development
-- Standard library only (no external dependencies except testing)
-- Comprehensive test suite (>40 tests)
-- Performance benchmarks (>20 benchmarks)
-- High test coverage (>60% overall)
-
 ## Installation
 
 ```bash
@@ -209,6 +203,7 @@ The Fave server can be configured in multiple ways, with the following precedenc
 | Host | `--host` | `FAVE_HOST` | `localhost` | Server host |
 | Store File | `--store-file` | `FAVE_STORE_FILE` | `./data/bookmarks.json` | Path to bookmarks storage file |
 | Password | `--password` | `FAVE_AUTH_PASSWORD` | `` (no auth) | Authentication password |
+| Public | `--public` | `FAVE_PUBLIC` | `false` | Allow unauthenticated read access (GET requests) |
 | Log Level | `--log-level` | `FAVE_LOG_LEVEL` | `info` | Log level (debug, info, warn, error) |
 | Log JSON | `--log-json` | `FAVE_LOG_JSON` | `false` | Output logs as JSON |
 | Snapshot Interval | `--snapshot-interval` | `FAVE_SNAPSHOT_INTERVAL` | `1s` | Snapshot save interval (e.g., 1s, 5s, 1m) |
@@ -220,6 +215,7 @@ fave serve --port 8080 \
            --host localhost \
            --store-file ./data/bookmarks.json \
            --password secret123 \
+           --public \
            --log-level info \
            --log-json \
            --snapshot-interval 5s
@@ -232,6 +228,7 @@ export FAVE_PORT=8080
 export FAVE_HOST=localhost
 export FAVE_STORE_FILE=./data/bookmarks.json
 export FAVE_AUTH_PASSWORD=secret123
+export FAVE_PUBLIC=true
 export FAVE_LOG_LEVEL=info
 export FAVE_LOG_JSON=true
 export FAVE_SNAPSHOT_INTERVAL=5s
@@ -249,6 +246,7 @@ Create a `config.json`:
   "host": "localhost",
   "store_file": "./data/bookmarks.json",
   "auth_password": "secret123",
+  "public": false,
   "log_level": "info",
   "log_json": false,
   "snapshot_interval": "5s"
@@ -280,6 +278,22 @@ fetch('http://localhost:8080/bookmarks', {
 ```
 
 Note: The username can be any value; only the password is validated.
+
+#### Public Read Mode
+
+When `public` is set to `true`, GET requests (read operations) are allowed without authentication, while POST, PUT, and DELETE requests still require authentication. This is useful for allowing public browsing while restricting modifications:
+
+```bash
+# Public mode allows reading without auth
+export FAVE_PUBLIC=true
+export FAVE_AUTH_PASSWORD=secret123
+
+# GET requests work without authentication
+curl http://localhost:8080/bookmarks
+
+# POST/PUT/DELETE still require authentication
+curl -u user:secret123 -X POST http://localhost:8080/bookmarks -d '{"name":"Test","url":"https://test.com"}'
+```
 
 ### Graceful Shutdown
 

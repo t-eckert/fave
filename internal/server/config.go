@@ -20,6 +20,7 @@ type Config struct {
 
 	// Auth settings
 	AuthPassword string `json:"auth_password"`
+	Public       bool   `json:"public"` // If true, allow unauthenticated read access (GET requests)
 
 	// Logging settings
 	LogLevel string `json:"log_level"` // debug, info, warn, error
@@ -36,6 +37,7 @@ func DefaultConfig() Config {
 		Host:             "localhost",
 		StoreFileName:    "./data/bookmarks.json",
 		AuthPassword:     "", // Empty means no auth required
+		Public:           false,
 		LogLevel:         "info",
 		LogJSON:          false,
 		SnapshotInterval: "1s",
@@ -54,6 +56,7 @@ func LoadConfig(args []string) (Config, error) {
 	host := fs.String("host", cfg.Host, "Server host")
 	storeFile := fs.String("store-file", cfg.StoreFileName, "Path to bookmarks storage file")
 	password := fs.String("password", cfg.AuthPassword, "Authentication password (empty = no auth)")
+	public := fs.Bool("public", cfg.Public, "Allow unauthenticated read access (GET requests)")
 	logLevel := fs.String("log-level", cfg.LogLevel, "Log level (debug, info, warn, error)")
 	logJSON := fs.Bool("log-json", cfg.LogJSON, "Output logs as JSON")
 	snapshotInterval := fs.String("snapshot-interval", cfg.SnapshotInterval, "Snapshot save interval (e.g., 1s, 5s, 1m)")
@@ -89,6 +92,9 @@ func LoadConfig(args []string) (Config, error) {
 	if v := os.Getenv("FAVE_AUTH_PASSWORD"); v != "" {
 		cfg.AuthPassword = v
 	}
+	if v := os.Getenv("FAVE_PUBLIC"); v == "true" {
+		cfg.Public = true
+	}
 	if v := os.Getenv("FAVE_LOG_LEVEL"); v != "" {
 		cfg.LogLevel = v
 	}
@@ -111,6 +117,9 @@ func LoadConfig(args []string) (Config, error) {
 	}
 	if explicitFlags["password"] {
 		cfg.AuthPassword = *password
+	}
+	if explicitFlags["public"] {
+		cfg.Public = *public
 	}
 	if explicitFlags["log-level"] {
 		cfg.LogLevel = *logLevel

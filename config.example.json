@@ -3,6 +3,7 @@
   "host": "localhost",
   "store_file": "./data/bookmarks.json",
   "auth_password": "",
+  "public": false,
   "log_level": "info",
   "log_json": false,
   "snapshot_interval": "5s"
