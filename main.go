@@ -7,9 +7,23 @@ import (
 	"os"
 )
 
+const usage = `fave
+A tiny CLI for saving your bookmarks.
+
+Usage: fave <subcommand>
+
+Available subcommands:
+(Server)
+	serve	Starts a Fave server to store and share bookmarks.
+(Client)
+	add	Add a bookmark.
+	list	List all bookmarks.
+	get	Get a bookmark.
+	delete	Delete a bookmark.`
+
 func main() {
 	if len(os.Args) < 2 {
-		fmt.Println("Usage: fave <subcommand>")
+		fmt.Println(usage)
 		os.Exit(1)
 	}
 

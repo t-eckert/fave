@@ -1,37 +1,47 @@
-package web
+package server
 
 import (
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/t-eckert/fave/internal"
+	"github.com/t-eckert/fave/internal/store"
 )
 
-type BookmarksServer struct {
-	Store *internal.Store
+type Server struct {
+	store *store.Store
+
+	ticker *time.Ticker
+	done   chan any
 }
 
-func NewBookmarksServer(store *internal.Store) *BookmarksServer {
-	return &BookmarksServer{
-		Store: store,
+func New(config Config) (*Server, error) {
+	store, err := store.NewStore(config.StoreFileName)
+	if err != nil {
+		return nil, err
 	}
+
+	s := Server{
+		store:  store,
+		ticker: time.NewTicker(1 * time.Second),
+		done:   make(chan any),
+	}
+
+	// Run the loop to save snapshots to disk in the background.
+	go s.storeSnapshotLoop()
+
+	return &s, nil
 }
 
-func NewMux(bookmarksServer *BookmarksServer) *http.ServeMux {
-	mux := http.NewServeMux()
-	mux.HandleFunc("GET /bookmarks", bookmarksServer.getBookmarksHandler)
-	mux.HandleFunc("GET /bookmarks/{id}", bookmarksServer.getBookmarksByIdHandler)
-	mux.HandleFunc("POST /bookmarks", bookmarksServer.postBookmarksHandler)
-	mux.HandleFunc("PUT /bookmarks/{id}", bookmarksServer.putBookmarksHandler)
-	mux.HandleFunc("DELETE /bookmarks/{id}", bookmarksServer.deleteBookmarksHandler)
-
-	return mux
+func (s *Server) Close() {
+	panic("NOT IMPLEMENTED")
 }
 
-func (b *BookmarksServer) getBookmarksHandler(w http.ResponseWriter, r *http.Request) {
-	j, err := json.Marshal(b.Store.List())
+func (s *Server) GetBookmarksHandler(w http.ResponseWriter, r *http.Request) {
+	j, err := json.Marshal(s.store.List())
 	if err != nil {
 		http.Error(w, "Error marshalling bookmarks", http.StatusInternalServerError)
 		return
@@ -42,14 +52,14 @@ func (b *BookmarksServer) getBookmarksHandler(w http.ResponseWriter, r *http.Req
 	w.Write(j)
 }
 
-func (b *BookmarksServer) getBookmarksByIdHandler(w http.ResponseWriter, r *http.Request) {
+func (s *Server) GetBookmarksByIDHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(r.PathValue("id"))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	bookmark, err := b.Store.Get(id)
+	bookmark, err := s.store.Get(id)
 	if err != nil {
 		http.Error(w, "Bookmark not found", http.StatusNotFound)
 		return
@@ -66,10 +76,7 @@ func (b *BookmarksServer) getBookmarksByIdHandler(w http.ResponseWriter, r *http
 	w.Write(j)
 }
 
-func (b *BookmarksServer) postBookmarksHandler(w http.ResponseWriter, r *http.Request) {
-	internal.BookmarksMutex.RLock()
-	defer internal.BookmarksMutex.RUnlock()
-
+func (s *Server) PostBookmarksHandler(w http.ResponseWriter, r *http.Request) {
 	var bookmark internal.Bookmark
 	err := json.NewDecoder(r.Body).Decode(&bookmark)
 	if err != nil {
@@ -82,12 +89,12 @@ func (b *BookmarksServer) postBookmarksHandler(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	id := b.Store.Add(bookmark)
+	id := s.store.Add(bookmark)
 
 	w.Write([]byte(strconv.Itoa(id)))
 }
 
-func (b *BookmarksServer) putBookmarksHandler(w http.ResponseWriter, r *http.Request) {
+func (s *Server) PutBookmarksHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(r.PathValue("id"))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -101,7 +108,7 @@ func (b *BookmarksServer) putBookmarksHandler(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	err = b.Store.Update(id, bookmark)
+	err = s.store.Update(id, bookmark)
 	if err != nil {
 		http.Error(w, "Bookmark not found", http.StatusNotFound)
 		return
@@ -110,17 +117,30 @@ func (b *BookmarksServer) putBookmarksHandler(w http.ResponseWriter, r *http.Req
 	w.Write([]byte(strconv.Itoa(id)))
 }
 
-func (b *BookmarksServer) deleteBookmarksHandler(w http.ResponseWriter, r *http.Request) {
+func (s *Server) DeleteBookmarksHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(r.PathValue("id"))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	internal.BookmarksMutex.Lock()
-	defer internal.BookmarksMutex.Unlock()
-
-	delete(internal.Bookmarks, id)
+	err = s.store.Delete(id)
+	if err != nil {
+		http.Error(w, "Bookmark not found", http.StatusNotFound)
+		return
+	}
 
 	w.Write([]byte(strconv.Itoa(id)))
+}
+
+func (s *Server) storeSnapshotLoop() {
+	for {
+		select {
+		case <-s.ticker.C:
+			s.store.SaveSnapshot()
+		case <-s.done:
+			s.ticker.Stop()
+			return
+		}
+	}
 }
