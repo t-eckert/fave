@@ -11,6 +11,8 @@ import (
 	"github.com/t-eckert/fave/internal"
 )
 
+// Store contains an in-memory store of all bookmarks.
+// It holds a pointer to a storage file for persistence.
 type Store struct {
 	Bookmarks  map[int]internal.Bookmark `json:"bookmarks"`
 	IdxCounter int                       `json:"idx_counter"`
@@ -25,6 +27,7 @@ type Store struct {
 // If the file does not exist, it will be created.
 // If the file exists and contains data, it will be read and loaded into the store.
 func NewStore(fileName string) (*Store, error) {
+	// Open the file for persistence.
 	file, err := os.OpenFile(fileName, os.O_CREATE|os.O_RDWR, 0666)
 	if err != nil {
 		return nil, err
@@ -38,13 +41,13 @@ func NewStore(fileName string) (*Store, error) {
 		mutex:      sync.RWMutex{},
 	}
 
-	// Check if file has content
+	// Check if file has content.
 	fileInfo, err := file.Stat()
 	if err != nil {
 		return nil, err
 	}
 
-	// If file has content, read and unmarshal it
+	// If file has content, read and unmarshal it.
 	if fileInfo.Size() > 0 {
 		decoder := json.NewDecoder(file)
 		err = decoder.Decode(store)
@@ -56,6 +59,8 @@ func NewStore(fileName string) (*Store, error) {
 	return store, nil
 }
 
+// Get retrieves a bookmark from the in-memory store.
+// If the bookmark cannot be found, it returns an error.
 func (s *Store) Get(id int) (internal.Bookmark, error) {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
@@ -68,6 +73,7 @@ func (s *Store) Get(id int) (internal.Bookmark, error) {
 	return bookmark, nil
 }
 
+// List returns all bookmarks in the in-memory store.
 func (s *Store) List() map[int]internal.Bookmark {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
@@ -76,6 +82,9 @@ func (s *Store) List() map[int]internal.Bookmark {
 	return maps.Clone(s.Bookmarks)
 }
 
+// Add inserts a new bookmark.
+// This bookmark will be given a unique ID by incrementing a counter on the store.
+// The ID of the bookmark is returned.
 func (s *Store) Add(bookmark internal.Bookmark) int {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
@@ -86,6 +95,8 @@ func (s *Store) Add(bookmark internal.Bookmark) int {
 	return s.IdxCounter
 }
 
+// Update swaps the bookmark at the given ID with the bookmark passed in.
+// If no bookmark is found with the given ID, an error is returned.
 func (s *Store) Update(id int, bookmark internal.Bookmark) error {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
@@ -96,9 +107,11 @@ func (s *Store) Update(id int, bookmark internal.Bookmark) error {
 	}
 
 	s.Bookmarks[id] = bookmark
-	return nil
+	return s.SaveSnapshot()
 }
 
+// Delete removes the bookmark at the given ID from the in-memory bookmarks.
+// The deletion is not persisted until the next snapshot is saved.
 func (s *Store) Delete(id int) error {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
@@ -112,6 +125,7 @@ func (s *Store) Delete(id int) error {
 	return nil
 }
 
+// SaveSnapshot atomically saves the in-memory store to disk.
 func (s *Store) SaveSnapshot() error {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
