@@ -4,6 +4,7 @@ Fave is a tiny bookmark manager written in Go. There are many like it, but this 
 
 ## Features
 
+### Server
 - RESTful HTTP API for bookmark management
 - Persistent storage with automatic snapshots
 - HTTP Basic Authentication support
@@ -11,7 +12,20 @@ Fave is a tiny bookmark manager written in Go. There are many like it, but this 
 - Structured logging with `log/slog`
 - CORS support for web clients
 - Health check endpoint
+
+### CLI Client
+- Full CRUD operations (add, list, get, update, delete)
+- Rich flag support for descriptions and tags
+- Automatic tag deduplication
+- Multi-source configuration (flags, env vars, config file)
+- Retry logic with exponential backoff
+- Connection pooling and timeouts
+
+### Development
 - Standard library only (no external dependencies except testing)
+- Comprehensive test suite (>40 tests)
+- Performance benchmarks (>20 benchmarks)
+- High test coverage (>60% overall)
 
 ## Installation
 
@@ -45,6 +59,137 @@ fave serve --config config.json
 export FAVE_PORT=9090
 export FAVE_AUTH_PASSWORD=secret123
 fave serve
+```
+
+### CLI Client Commands
+
+The Fave CLI provides commands to interact with a running server.
+
+#### Add Bookmarks
+
+```bash
+# Basic add
+fave add "My Website" "https://example.com"
+
+# Add with description
+fave add -d "Great article on Go" "Go Best Practices" "https://golang.org"
+fave add --description "Useful tool" "Tool Name" "https://tool.com"
+
+# Add with tags (can specify multiple times)
+fave add -t golang -t programming "Learn Go" "https://golang.org"
+fave add --tag web --tag tutorial "Web Tutorial" "https://example.com"
+
+# Add with both description and tags
+fave add -d "Comprehensive guide" -t golang -t guide "Go Guide" "https://go.dev"
+
+# Tags are automatically deduplicated
+fave add -t golang -t tutorial -t golang "Go Tutorial" "https://example.com"
+# Results in tags: [golang, tutorial]
+
+# Connect to remote server
+fave add --host http://remote:8080 --password secret123 "Remote Bookmark" "https://example.com"
+```
+
+#### List Bookmarks
+
+```bash
+# List all bookmarks from default server (localhost:8080)
+fave list
+
+# List from remote server
+fave list --host http://remote:8080 --password secret123
+```
+
+#### Get Bookmark by ID
+
+```bash
+# Get bookmark with ID 1
+fave get 1
+
+# Get from remote server
+fave get 42 --host http://remote:8080 --password secret123
+```
+
+#### Update Bookmarks
+
+```bash
+# Update name and URL
+fave update 1 "Updated Name" "https://newurl.com"
+
+# Update with description
+fave update -d "New description" 1 "Updated" "https://url.com"
+
+# Update with tags
+fave update -t updated -t v2 1 "Version 2" "https://v2.example.com"
+
+# Update with description and tags
+fave update -d "Latest version" -t v2 -t stable 1 "Stable Release" "https://example.com"
+
+# Update on remote server
+fave update --host http://remote:8080 42 "Updated" "https://example.com"
+```
+
+#### Delete Bookmarks
+
+```bash
+# Delete bookmark with ID 1
+fave delete 1
+
+# Delete from remote server
+fave delete 42 --host http://remote:8080 --password secret123
+```
+
+#### Health Check
+
+```bash
+# Check if server is healthy
+fave health
+
+# Check remote server
+fave health --host http://remote:8080
+```
+
+### Client Configuration
+
+The CLI client can be configured using:
+
+1. **CLI flags** (highest priority) - `--host`, `--password`, etc.
+2. **Environment variables** - `FAVE_HOST`, `FAVE_PASSWORD`, etc.
+3. **Config file** - `~/.fave/client-config.json`
+4. **Defaults** - `http://localhost:8080` with no auth
+
+#### Environment Variables
+
+```bash
+export FAVE_HOST=http://localhost:8080
+export FAVE_PASSWORD=secret123
+export FAVE_TIMEOUT=30s
+export FAVE_RETRY_ATTEMPTS=3
+
+# Now all commands use these settings
+fave list
+fave add "Example" "https://example.com"
+```
+
+#### Config File
+
+Create `~/.fave/client-config.json`:
+
+```json
+{
+  "host": "http://localhost:8080",
+  "password": "secret123",
+  "timeout": "30s",
+  "retry_attempts": 3,
+  "retry_delay": "1s"
+}
+```
+
+Then run commands without flags:
+
+```bash
+fave list
+fave add "Example" "https://example.com"
 ```
 
 ## Server Configuration
@@ -352,8 +497,9 @@ go test -bench=. -benchmem ./internal/server
 
 The project maintains high test coverage:
 
-- Server package: >80%
-- Store package: >90%
+- Client package: ~42% (18 tests + 8 benchmarks)
+- Server package: ~64% (20 tests + 7 benchmarks)
+- Store package: ~89% (comprehensive tests + 9 benchmarks)
 
 ### Project Structure
 
@@ -361,27 +507,39 @@ The project maintains high test coverage:
 .
 ├── cmd/                    # CLI commands
 │   ├── serve.go           # Server command
-│   ├── add.go             # Add bookmark command
+│   ├── add.go             # Add bookmark command (with -d/-t flags)
 │   ├── list.go            # List bookmarks command
 │   ├── get.go             # Get bookmark command
-│   └── delete.go          # Delete bookmark command
+│   ├── update.go          # Update bookmark command (with -d/-t flags)
+│   ├── delete.go          # Delete bookmark command
+│   ├── health.go          # Health check command
+│   └── utils/             # Shared utilities
+│       ├── config.go      # Client config loader
+│       ├── flags.go       # Custom flag types
+│       └── format.go      # Output formatting
 ├── internal/
 │   ├── bookmark.go        # Bookmark data structure
+│   ├── client/            # HTTP client
+│   │   ├── client.go      # Client implementation
+│   │   ├── config.go      # Client configuration
+│   │   ├── errors.go      # Error types
+│   │   ├── client_test.go # Client tests (~18 tests)
+│   │   └── client_bench_test.go # Client benchmarks (~8 benchmarks)
 │   ├── server/            # HTTP server
 │   │   ├── server.go      # Server implementation
 │   │   ├── config.go      # Configuration system
 │   │   ├── middleware.go  # HTTP middleware
 │   │   ├── store_interface.go  # Store abstraction
-│   │   ├── server_test.go      # Handler tests
-│   │   ├── integration_test.go # Integration tests
-│   │   ├── server_bench_test.go # Benchmarks
+│   │   ├── server_test.go      # Handler tests (~20 tests)
+│   │   ├── integration_test.go # Integration tests (~5 tests)
+│   │   ├── server_bench_test.go # Benchmarks (~7 benchmarks)
 │   │   └── mock_store_test.go  # Mock for testing
 │   └── store/             # Bookmark storage
 │       ├── store.go       # Store implementation
 │       ├── store_test.go  # Store tests
-│       └── store_bench_test.go # Store benchmarks
+│       └── store_bench_test.go # Store benchmarks (~9 benchmarks)
 ├── main.go                # Entry point
-├── config.example.json    # Example configuration
+├── config.example.json    # Example server configuration
 └── README.md              # This file
 ```
 
@@ -409,11 +567,12 @@ Bookmarks are stored in memory and persisted to disk as JSON:
 
 Comprehensive test suite with:
 
-- Unit tests for HTTP handlers (~20 tests)
-- Integration tests for full workflows (~5 tests)
-- Benchmark tests for performance (~7 benchmarks)
+- **Client tests**: Unit tests for HTTP client (~18 tests), performance benchmarks (~8 benchmarks)
+- **Server tests**: Unit tests for HTTP handlers (~20 tests), integration tests (~5 tests), benchmarks (~7 benchmarks)
+- **Store tests**: Unit tests with comprehensive coverage, benchmarks for all operations (~9 benchmarks)
 - Mock implementations for dependency injection
 - Table-driven tests for multiple scenarios
+- Modern `b.Loop()` syntax for all benchmarks
 
 ## License
 

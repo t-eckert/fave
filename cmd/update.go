@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"flag"
 	"fmt"
 	"strconv"
 
@@ -10,18 +11,43 @@ import (
 )
 
 func RunUpdate(args []string) error {
-	if len(args) < 3 {
+	// Parse command-specific flags
+	fs := flag.NewFlagSet("update", flag.ContinueOnError)
+	description := fs.String("description", "", "Bookmark description")
+	fs.String("d", "", "Bookmark description (shorthand)")
+	var tags utils.StringSlice
+	fs.Var(&tags, "tag", "Tag (can be specified multiple times)")
+	fs.Var(&tags, "t", "Tag (shorthand, can be specified multiple times)")
+
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+
+	// Get remaining args (id, name, url, and client config flags)
+	remaining := fs.Args()
+	if len(remaining) < 3 {
 		return fmt.Errorf("usage: fave update [flags] <id> <name> <url>")
 	}
 
 	// Parse ID
-	id, err := strconv.Atoi(args[0])
+	id, err := strconv.Atoi(remaining[0])
 	if err != nil {
 		return fmt.Errorf("invalid bookmark ID: %w", err)
 	}
 
-	// Load configuration
-	cfg, err := utils.LoadClientConfig(args[3:])
+	name := remaining[1]
+	url := remaining[2]
+
+	// Handle shorthand -d flag
+	if d := fs.Lookup("d").Value.String(); d != "" {
+		*description = d
+	}
+
+	// Deduplicate tags
+	uniqueTags := utils.DeduplicateStrings(tags)
+
+	// Load client configuration from remaining args
+	cfg, err := utils.LoadClientConfig(remaining[3:])
 	if err != nil {
 		return err
 	}
@@ -33,15 +59,7 @@ func RunUpdate(args []string) error {
 	}
 	defer c.Close()
 
-	name := args[1]
-	url := args[2]
-
-	bookmark := internal.Bookmark{
-		Url:         url,
-		Name:        name,
-		Description: "",
-		Tags:        []string{},
-	}
+	bookmark := internal.NewBookmark(url, name, *description, uniqueTags)
 
 	err = c.Update(id, bookmark)
 	if err != nil {

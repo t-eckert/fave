@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"flag"
 	"fmt"
 
 	"github.com/t-eckert/fave/cmd/utils"
@@ -9,12 +10,37 @@ import (
 )
 
 func RunAdd(args []string) error {
-	if len(args) < 2 {
+	// Parse command-specific flags
+	fs := flag.NewFlagSet("add", flag.ContinueOnError)
+	description := fs.String("description", "", "Bookmark description")
+	fs.String("d", "", "Bookmark description (shorthand)")
+	var tags utils.StringSlice
+	fs.Var(&tags, "tag", "Tag (can be specified multiple times)")
+	fs.Var(&tags, "t", "Tag (shorthand, can be specified multiple times)")
+
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+
+	// Get remaining args (name, url, and client config flags)
+	remaining := fs.Args()
+	if len(remaining) < 2 {
 		return fmt.Errorf("usage: fave add [flags] <name> <url>")
 	}
 
-	// Load configuration
-	cfg, err := utils.LoadClientConfig(args[2:])
+	name := remaining[0]
+	url := remaining[1]
+
+	// Handle shorthand -d flag
+	if d := fs.Lookup("d").Value.String(); d != "" {
+		*description = d
+	}
+
+	// Deduplicate tags
+	uniqueTags := utils.DeduplicateStrings(tags)
+
+	// Load client configuration from remaining args
+	cfg, err := utils.LoadClientConfig(remaining[2:])
 	if err != nil {
 		return err
 	}
@@ -26,10 +52,7 @@ func RunAdd(args []string) error {
 	}
 	defer c.Close()
 
-	name := args[0]
-	url := args[1]
-
-	bookmark := internal.NewBookmark(url, name, "", []string{})
+	bookmark := internal.NewBookmark(url, name, *description, uniqueTags)
 
 	id, err := c.Add(bookmark)
 	if err != nil {
