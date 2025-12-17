@@ -23,19 +23,37 @@ type Store struct {
 
 // NewStore initializes a new store with the file at `fileName` as the backing file.
 // If the file does not exist, it will be created.
+// If the file exists and contains data, it will be read and loaded into the store.
 func NewStore(fileName string) (*Store, error) {
 	file, err := os.OpenFile(fileName, os.O_CREATE|os.O_RDWR, 0666)
 	if err != nil {
 		return nil, err
 	}
 
-	return &Store{
+	store := &Store{
 		Bookmarks:  make(map[int]internal.Bookmark),
 		IdxCounter: 0,
 		fileName:   fileName,
 		file:       file,
 		mutex:      sync.RWMutex{},
-	}, nil
+	}
+
+	// Check if file has content
+	fileInfo, err := file.Stat()
+	if err != nil {
+		return nil, err
+	}
+
+	// If file has content, read and unmarshal it
+	if fileInfo.Size() > 0 {
+		decoder := json.NewDecoder(file)
+		err = decoder.Decode(store)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return store, nil
 }
 
 func (s *Store) Get(id int) (internal.Bookmark, error) {
