@@ -2,30 +2,23 @@ package cmd
 
 import (
 	"fmt"
-	"io"
-	"net/http"
+
+	"github.com/t-eckert/fave/internal/client"
 )
 
 func RunDelete(args []string) error {
 	if len(args) < 1 {
-		return nil
+		return fmt.Errorf("usage: fave delete <id>")
 	}
 
 	id := args[0]
 
-	req, err := http.NewRequest("DELETE", host+"/bookmarks/"+id, nil)
+	client := client.New(host)
+	delId, err := client.Delete(id)
 	if err != nil {
 		return err
 	}
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-	respBody, err := io.ReadAll(resp.Body)
-
-	fmt.Println(string(respBody))
+	fmt.Println(delId)
 
 	return nil
 }

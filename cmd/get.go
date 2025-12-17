@@ -1,11 +1,9 @@
 package cmd
 
 import (
-	"encoding/json"
 	"fmt"
-	"net/http"
 
-	"github.com/t-eckert/fave/internal"
+	"github.com/t-eckert/fave/internal/client"
 )
 
 func RunGet(args []string) error {
@@ -15,14 +13,8 @@ func RunGet(args []string) error {
 
 	id := args[0]
 
-	resp, err := http.Get(host + "/bookmarks/" + id)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	var bookmark internal.Bookmark
-	err = json.NewDecoder(resp.Body).Decode(&bookmark)
+	client := client.New(host)
+	bookmark, err := client.Get(id)
 	if err != nil {
 		return err
 	}

@@ -1,22 +1,14 @@
 package cmd
 
 import (
-	"encoding/json"
 	"fmt"
-	"net/http"
 
-	"github.com/t-eckert/fave/internal"
+	"github.com/t-eckert/fave/internal/client"
 )
 
 func RunList(args []string) error {
-	resp, err := http.Get(host + "/bookmarks")
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	var bookmarks map[string]internal.Bookmark
-	err = json.NewDecoder(resp.Body).Decode(&bookmarks)
+	client := client.New(host)
+	bookmarks, err := client.List()
 	if err != nil {
 		return err
 	}

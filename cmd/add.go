@@ -1,13 +1,10 @@
 package cmd
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
-	"io"
-	"net/http"
 
 	"github.com/t-eckert/fave/internal"
+	"github.com/t-eckert/fave/internal/client"
 )
 
 var host = "http://localhost:8080"
@@ -27,21 +24,13 @@ func RunAdd(args []string) error {
 		Tags:        []string{},
 	}
 
-	j, err := json.Marshal(bookmark)
-	if err != nil {
-		return err
-	}
+	client := client.New(host)
 
-	resp, err := http.Post(host+"/bookmarks", "application/json", bytes.NewReader(j))
+	id, err := client.Add(bookmark)
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
-	id, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return err
-	}
-	fmt.Println(string(id))
+	fmt.Println(id)
 
 	return nil
 }
