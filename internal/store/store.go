@@ -97,6 +97,7 @@ func (s *Store) Add(bookmark internal.Bookmark) int {
 
 // Update swaps the bookmark at the given ID with the bookmark passed in.
 // If no bookmark is found with the given ID, an error is returned.
+// The update is not persisted until the next snapshot is saved.
 func (s *Store) Update(id int, bookmark internal.Bookmark) error {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
@@ -107,7 +108,7 @@ func (s *Store) Update(id int, bookmark internal.Bookmark) error {
 	}
 
 	s.Bookmarks[id] = bookmark
-	return s.SaveSnapshot()
+	return nil
 }
 
 // Delete removes the bookmark at the given ID from the in-memory bookmarks.
@@ -135,7 +136,7 @@ func (s *Store) SaveSnapshot() error {
 		return err
 	}
 
-	tmpf, err := os.CreateTemp(filepath.Dir(s.fileName), filepath.Base(s.fileName))
+	tmpf, err := os.CreateTemp(filepath.Dir(s.fileName), "snapshot-*.json")
 	if err != nil {
 		return err
 	}
