@@ -40,9 +40,9 @@ func createTestServer(t *testing.T, mockStore *MockStore, config server.Config) 
 
 func testConfig() server.Config {
 	cfg := server.DefaultConfig()
-	cfg.Port = "0" // Random port
+	cfg.Port = "0"              // Random port
 	cfg.SnapshotInterval = "1h" // Long interval for tests
-	cfg.AuthPassword = "" // No auth by default
+	cfg.AuthPassword = ""       // No auth by default
 	return cfg
 }
 
