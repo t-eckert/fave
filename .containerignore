@@ -1,0 +1,35 @@
+# Git
+.git
+.gitignore
+
+# Build artifacts
+fave
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Test files
+*_test.go
+*.out
+
+# Data
+data/
+*.json
+
+# Documentation
+README.md
+CLAUDE.md
+LICENSE
+
+# IDE
+.vscode/
+.idea/
+
+# Temporary files
+*.swp
+*.swo
+*~
+
+# macOS
+.DS_Store

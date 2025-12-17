@@ -1,5 +1,9 @@
 # Fave
 
+[![CI](https://github.com/t-eckert/fave/actions/workflows/ci.yml/badge.svg)](https://github.com/t-eckert/fave/actions/workflows/ci.yml)
+[![Go Report Card](https://goreportcard.com/badge/github.com/t-eckert/fave)](https://goreportcard.com/report/github.com/t-eckert/fave)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
 Fave is a tiny bookmark manager written in Go. There are many like it, but this one is mine.
 
 ## Features
@@ -34,6 +38,45 @@ git clone https://github.com/t-eckert/fave.git
 cd fave
 go build
 ```
+
+### Container
+
+Build and run with Podman or Docker:
+
+```bash
+# Build the container image
+podman build -t fave:latest .
+
+# Run the server with a volume for persistent storage
+podman run -d \
+  --name fave \
+  -p 8080:8080 \
+  -v fave-data:/data \
+  -e FAVE_AUTH_PASSWORD=secret123 \
+  fave:latest
+
+# Run with custom configuration file
+podman run -d \
+  --name fave \
+  -p 8080:8080 \
+  -v ./config.json:/app/config.json:ro \
+  -v fave-data:/data \
+  fave:latest serve --config /app/config.json
+
+# Run CLI commands against a running server
+podman run --rm \
+  --network host \
+  fave:latest list --host http://localhost:8080 --password secret123
+```
+
+The container:
+- Uses distroless base image for minimal attack surface
+- Runs as non-root user (UID 65532)
+- Binds to `0.0.0.0:8080` (accepts external connections)
+- Stores data in `/data/bookmarks.json` by default
+- Exposes port 8080
+- Supports all configuration via environment variables or config file
+- No shell or package manager (security hardened)
 
 ## Usage
 

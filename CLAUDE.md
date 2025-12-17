@@ -41,7 +41,28 @@ go test -bench=. ./internal/store
 
 # Run benchmarks with memory stats
 go test -bench=. -benchmem ./internal/server
+
+# Build container image
+podman build -t fave:latest .
+docker build -t fave:latest .
+
+# Run container
+podman run -d -p 8080:8080 -v fave-data:/data fave:latest
 ```
+
+**Container Notes:**
+- Uses distroless base image (`gcr.io/distroless/static-debian12:nonroot`)
+- Runs as UID 65532 (nonroot user)
+- No shell or debugging tools available (use `--entrypoint` override for debugging)
+- Project has no external dependencies (uses only Go standard library), so `go.sum` may not exist
+
+**CI/CD:**
+- GitHub Actions workflow runs on push to main and pull requests
+- Tests on multiple Go versions (1.23, 1.24, 1.25) and OS (Linux, macOS, Windows)
+- Runs linting (go vet, gofmt, staticcheck)
+- Runs benchmarks
+- Builds container image on main branch
+- Coverage reports uploaded to Codecov (optional)
 
 ## Architecture
 
