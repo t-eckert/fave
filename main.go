@@ -35,7 +35,7 @@ func main() {
 	var err error
 	switch subcommand {
 	case "serve":
-		err = cmd.RunServer(rest)
+		err = cmd.RunServe(rest)
 	case "add":
 		err = cmd.RunAdd(rest)
 	case "list":

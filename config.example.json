@@ -1,0 +1,9 @@
+{
+  "port": "8080",
+  "host": "localhost",
+  "store_file": "./data/bookmarks.json",
+  "auth_password": "",
+  "log_level": "info",
+  "log_json": false,
+  "snapshot_interval": "5s"
+}
