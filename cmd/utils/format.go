@@ -12,13 +12,34 @@ func FormatDate(unixTime int64) string {
 	return t.Format("2006-01-02 15:04:05")
 }
 
-func FormatBookmark(id int, bookmark *internal.Bookmark) string {
-	return fmt.Sprintf("ID: %d\nName: %s\nURL: %s\nDescription: %s\nTags: %v\nCreated At: %s\nUpdated At: %s",
-		id,
-		bookmark.Name,
-		bookmark.Url,
-		bookmark.Description,
-		bookmark.Tags,
-		FormatDate(bookmark.CreatedAt),
-		FormatDate(bookmark.UpdatedAt))
+func FormatBookmark(id int, bookmark *internal.Bookmark, output string) string {
+	switch output {
+	case "json":
+		return fmt.Sprintf(`{
+	"id": %d,
+	"name": "%s",
+	"url": "%s",
+	"description": "%s",
+	"tags": %v,
+	"created_at": "%s",
+	"updated_at": "%s"
+}`, id,
+			bookmark.Name,
+			bookmark.Url,
+			bookmark.Description,
+			bookmark.Tags,
+			FormatDate(bookmark.CreatedAt),
+			FormatDate(bookmark.UpdatedAt))
+	case "text":
+		return fmt.Sprintf("ID: %d\nName: %s\nURL: %s\nDescription: %s\nTags: %v\nCreated At: %s\nUpdated At: %s",
+			id,
+			bookmark.Name,
+			bookmark.Url,
+			bookmark.Description,
+			bookmark.Tags,
+			FormatDate(bookmark.CreatedAt),
+			FormatDate(bookmark.UpdatedAt))
+	default:
+		return "Unsupported output format " + output
+	}
 }

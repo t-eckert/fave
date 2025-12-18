@@ -32,7 +32,7 @@ func RunList(args []string) error {
 	}
 
 	for id, bookmark := range bookmarks {
-		fmt.Println(utils.FormatBookmark(id, &bookmark))
+		fmt.Println(utils.FormatBookmark(id, &bookmark, "text"))
 		fmt.Println("---")
 	}
 
