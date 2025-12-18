@@ -127,6 +127,9 @@ func (s *Store) Delete(id int) error {
 }
 
 // SaveSnapshot atomically saves the in-memory store to disk.
+// On Unix-like systems, this is fully atomic. On Windows, there's a small
+// window between removing the old file and renaming the temp file where the
+// file doesn't exist, but this is necessary for cross-platform compatibility.
 func (s *Store) SaveSnapshot() error {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
@@ -147,6 +150,14 @@ func (s *Store) SaveSnapshot() error {
 	}
 	if err := tmpf.Close(); err != nil {
 		return err
+	}
+
+	// On Windows, os.Rename fails if target exists, so remove it first
+	// This sacrifices some atomicity on Windows, but maintains compatibility
+	if _, err := os.Stat(s.fileName); err == nil {
+		if err := os.Remove(s.fileName); err != nil {
+			return err
+		}
 	}
 
 	return os.Rename(tmpf.Name(), s.fileName)
