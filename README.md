@@ -41,11 +41,14 @@ go build
 
 ### Container
 
-Build and run with Podman or Docker:
+Pull the pre-built image from GitHub Container Registry:
 
 ```bash
-# Build the container image
-podman build -t fave:latest .
+# Pull the latest image
+podman pull ghcr.io/t-eckert/fave:latest
+
+# Or pull a specific commit
+podman pull ghcr.io/t-eckert/fave:main-abc123
 
 # Run the server with a volume for persistent storage
 podman run -d \
@@ -53,7 +56,7 @@ podman run -d \
   -p 8080:8080 \
   -v fave-data:/data \
   -e FAVE_AUTH_PASSWORD=secret123 \
-  fave:latest
+  ghcr.io/t-eckert/fave:latest
 
 # Run with custom configuration file
 podman run -d \
@@ -61,12 +64,26 @@ podman run -d \
   -p 8080:8080 \
   -v ./config.json:/app/config.json:ro \
   -v fave-data:/data \
-  fave:latest serve --config /app/config.json
+  ghcr.io/t-eckert/fave:latest serve --config /app/config.json
 
 # Run CLI commands against a running server
 podman run --rm \
   --network host \
-  fave:latest list --host http://localhost:8080 --password secret123
+  ghcr.io/t-eckert/fave:latest list --host http://localhost:8080 --password secret123
+```
+
+Or build locally:
+
+```bash
+# Build the container image yourself
+podman build -t fave:latest .
+
+# Run it
+podman run -d \
+  --name fave \
+  -p 8080:8080 \
+  -v fave-data:/data \
+  fave:latest
 ```
 
 The container:
