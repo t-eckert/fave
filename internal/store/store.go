@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
+	"time"
 
 	"github.com/t-eckert/fave/internal"
 )
@@ -32,12 +33,13 @@ func NewStore(fileName string) (*Store, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer file.Close() // Close after reading initial data
 
 	store := &Store{
 		Bookmarks:  make(map[int]internal.Bookmark),
 		IdxCounter: 0,
 		fileName:   fileName,
-		file:       file,
+		file:       nil, // No longer keep file handle open
 		mutex:      sync.RWMutex{},
 	}
 
@@ -155,8 +157,21 @@ func (s *Store) SaveSnapshot() error {
 	// On Windows, os.Rename fails if target exists, so remove it first
 	// This sacrifices some atomicity on Windows, but maintains compatibility
 	if _, err := os.Stat(s.fileName); err == nil {
-		if err := os.Remove(s.fileName); err != nil {
-			return err
+		// On Windows, file handles may not be immediately released after close
+		// Retry removal a few times with exponential backoff
+		var removeErr error
+		for i := 0; i < 5; i++ {
+			removeErr = os.Remove(s.fileName)
+			if removeErr == nil {
+				break
+			}
+			// Small delay before retry to allow file handle to be released
+			if i < 4 {
+				time.Sleep(time.Duration(10*(1<<uint(i))) * time.Millisecond) // 10ms, 20ms, 40ms, 80ms
+			}
+		}
+		if removeErr != nil {
+			return removeErr
 		}
 	}
 
