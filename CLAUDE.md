@@ -93,6 +93,8 @@ Both server and client use **multi-source configuration** with precedence:
 1. CLI flags (highest priority)
 2. Environment variables
 3. Config file (JSON)
+   - Client: `~/.config/fave/client.json`
+   - Server: Path specified via `--config` flag
 4. Default values (lowest priority)
 
 **Implementation pattern:**

@@ -209,7 +209,7 @@ The CLI client can be configured using:
 
 1. **CLI flags** (highest priority) - `--host`, `--password`, etc.
 2. **Environment variables** - `FAVE_HOST`, `FAVE_PASSWORD`, etc.
-3. **Config file** - `~/.fave/client-config.json`
+3. **Config file** - `~/.config/fave/client.json`
 4. **Defaults** - `http://localhost:8080` with no auth
 
 #### Environment Variables
@@ -227,7 +227,7 @@ fave add "Example" "https://example.com"
 
 #### Config File
 
-Create `~/.fave/client-config.json`:
+Create `~/.config/fave/client.json`:
 
 ```json
 {

@@ -88,7 +88,7 @@ func (c *Config) Validate() error {
 	return nil
 }
 
-// loadConfigFile loads configuration from ~/.fave/client-config.json if it exists.
+// loadConfigFile loads configuration from ~/.config/fave/client.json if it exists.
 func loadConfigFile(cfg *Config) error {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
@@ -96,7 +96,7 @@ func loadConfigFile(cfg *Config) error {
 		return nil
 	}
 
-	configPath := filepath.Join(homeDir, ".fave", "client-config.json")
+	configPath := filepath.Join(homeDir, ".config", "fave", "client.json")
 
 	// Check if file exists
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {

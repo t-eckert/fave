@@ -1,0 +1,10 @@
+{
+  "host": "http://localhost:8080",
+  "password": "your-password-here",
+  "timeout": "30s",
+  "dial_timeout": "10s",
+  "keep_alive": "30s",
+  "retry_attempts": 3,
+  "retry_delay": "1s",
+  "retry_max_delay": "10s"
+}
