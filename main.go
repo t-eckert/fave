@@ -19,6 +19,7 @@ Available subcommands:
 	add	Add a bookmark.
 	list	List all bookmarks.
 	get	Get a bookmark by ID.
+	edit	Edit a bookmark in YAML format.
 	open	Open a bookmark's URL in the browser.
 	update	Update an existing bookmark.
 	delete	Delete a bookmark by ID.
@@ -49,6 +50,8 @@ func main() {
 		err = cmd.RunList(rest)
 	case "get":
 		err = cmd.RunGet(rest)
+	case "edit":
+		err = cmd.RunEdit(rest)
 	case "open":
 		err = cmd.RunOpen(rest)
 	case "update":

@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"sort"
 
 	"github.com/t-eckert/fave/cmd/utils"
 	"github.com/t-eckert/fave/internal/client"
@@ -31,7 +32,16 @@ func RunList(args []string) error {
 		return nil
 	}
 
-	for id, bookmark := range bookmarks {
+	// Extract and sort IDs
+	ids := make([]int, 0, len(bookmarks))
+	for id := range bookmarks {
+		ids = append(ids, id)
+	}
+	sort.Ints(ids)
+
+	// Print bookmarks in sorted order
+	for _, id := range ids {
+		bookmark := bookmarks[id]
 		fmt.Println(utils.FormatBookmarkPreview(id, &bookmark))
 	}
 
