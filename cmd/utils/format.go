@@ -43,3 +43,7 @@ func FormatBookmark(id int, bookmark *internal.Bookmark, output string) string {
 		return "Unsupported output format " + output
 	}
 }
+
+func FormatBookmarkPreview(id int, bookmark *internal.Bookmark) string {
+	return fmt.Sprintf("%d: %s", id, bookmark.Name)
+}

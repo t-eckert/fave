@@ -19,6 +19,7 @@ Available subcommands:
 	add	Add a bookmark.
 	list	List all bookmarks.
 	get	Get a bookmark by ID.
+	open	Open a bookmark's URL in the browser.
 	update	Update an existing bookmark.
 	delete	Delete a bookmark by ID.
 	health	Check server health.
@@ -48,6 +49,8 @@ func main() {
 		err = cmd.RunList(rest)
 	case "get":
 		err = cmd.RunGet(rest)
+	case "open":
+		err = cmd.RunOpen(rest)
 	case "update":
 		err = cmd.RunUpdate(rest)
 	case "delete":
