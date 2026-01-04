@@ -4,6 +4,7 @@ import (
 	"time"
 )
 
+// Bookmark represents a single bookmark with metadata.
 type Bookmark struct {
 	Url         string   `json:"url" yaml:"url"`
 	Name        string   `json:"name" yaml:"name"`
@@ -13,6 +14,7 @@ type Bookmark struct {
 	UpdatedAt   int64    `json:"updated_at" yaml:"updated_at"`
 }
 
+// NewBookmark creates a new Bookmark instance with the provided details.
 func NewBookmark(url, name, description string, tags []string) Bookmark {
 	return Bookmark{
 		Url:         url,
