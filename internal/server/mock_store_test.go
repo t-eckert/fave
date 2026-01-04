@@ -2,10 +2,13 @@ package server_test
 
 import (
 	"errors"
+	"fmt"
 	"maps"
+	"regexp"
 	"sync"
 
 	"github.com/t-eckert/fave/internal"
+	"github.com/t-eckert/fave/internal/store"
 )
 
 // MockStore implements StoreInterface for testing.
@@ -20,6 +23,7 @@ type MockStore struct {
 	UpdateError       error
 	DeleteError       error
 	SaveSnapshotError error
+	SearchError       error
 }
 
 func NewMockStore() *MockStore {
@@ -101,6 +105,63 @@ func (m *MockStore) SaveSnapshot() error {
 		return m.SaveSnapshotError
 	}
 	return nil
+}
+
+func (m *MockStore) Search(pattern string) ([]store.SearchResult, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
+	if m.SearchError != nil {
+		return nil, m.SearchError
+	}
+
+	// Compile the regex pattern
+	re, err := regexp.Compile(pattern)
+	if err != nil {
+		return nil, fmt.Errorf("invalid regex pattern: %w", err)
+	}
+
+	var results []store.SearchResult
+
+	for id, bookmark := range m.bookmarks {
+		var match string
+
+		// Search in URL
+		if re.MatchString(bookmark.Url) {
+			match = re.FindString(bookmark.Url)
+		}
+
+		// Search in Name
+		if match == "" && re.MatchString(bookmark.Name) {
+			match = re.FindString(bookmark.Name)
+		}
+
+		// Search in Description
+		if match == "" && re.MatchString(bookmark.Description) {
+			match = re.FindString(bookmark.Description)
+		}
+
+		// Search in Tags
+		if match == "" {
+			for _, tag := range bookmark.Tags {
+				if re.MatchString(tag) {
+					match = re.FindString(tag)
+					break
+				}
+			}
+		}
+
+		// If we found a match, add to results
+		if match != "" {
+			results = append(results, store.SearchResult{
+				ID:       id,
+				Bookmark: bookmark,
+				Match:    match,
+			})
+		}
+	}
+
+	return results, nil
 }
 
 // Helper methods for testing

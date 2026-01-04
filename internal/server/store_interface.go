@@ -1,6 +1,9 @@
 package server
 
-import "github.com/t-eckert/fave/internal"
+import (
+	"github.com/t-eckert/fave/internal"
+	"github.com/t-eckert/fave/internal/store"
+)
 
 // StoreInterface defines the contract for bookmark storage operations.
 // This interface allows for easier testing via mocks and decouples the
@@ -13,6 +16,10 @@ type StoreInterface interface {
 	// List returns all bookmarks in the store.
 	// The returned map is keyed by bookmark ID.
 	List() map[int]internal.Bookmark
+
+	// Search searches for bookmarks matching a regex pattern.
+	// Returns search results with matching text.
+	Search(pattern string) ([]store.SearchResult, error)
 
 	// Add creates a new bookmark and returns its assigned ID.
 	Add(bookmark internal.Bookmark) int

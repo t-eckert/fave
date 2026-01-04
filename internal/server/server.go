@@ -170,6 +170,29 @@ func (s *Server) snapshotLoop() {
 // HTTP Handlers
 
 func (s *Server) GetBookmarksHandler(w http.ResponseWriter, r *http.Request) {
+	// Check for search query parameter
+	query := r.URL.Query().Get("q")
+	if query != "" {
+		// Perform search
+		results, err := s.store.Search(query)
+		if err != nil {
+			writeJSONError(w, fmt.Sprintf("Search error: %v", err), http.StatusBadRequest)
+			return
+		}
+
+		// Convert search results to map format for consistency
+		searchMap := make(map[int]map[string]interface{})
+		for _, result := range results {
+			searchMap[result.ID] = map[string]interface{}{
+				"bookmark": result.Bookmark,
+				"match":    result.Match,
+			}
+		}
+		writeJSON(w, searchMap, http.StatusOK)
+		return
+	}
+
+	// No query parameter, return all bookmarks
 	bookmarks := s.store.List()
 	writeJSON(w, bookmarks, http.StatusOK)
 }

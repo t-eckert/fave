@@ -18,6 +18,7 @@ Available subcommands:
 (Client)
 	add	Add a bookmark.
 	list	List all bookmarks.
+	search	Search bookmarks using regex.
 	get	Get a bookmark by ID.
 	edit	Edit a bookmark in YAML format.
 	open	Open a bookmark's URL in the browser.
@@ -48,6 +49,8 @@ func main() {
 		err = cmd.RunAdd(rest)
 	case "list":
 		err = cmd.RunList(rest)
+	case "search":
+		err = cmd.RunSearch(rest)
 	case "get":
 		err = cmd.RunGet(rest)
 	case "edit":

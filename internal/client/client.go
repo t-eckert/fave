@@ -79,6 +79,49 @@ func (c *Client) List() (map[int]internal.Bookmark, error) {
 	return bookmarks, nil
 }
 
+// SearchResult represents a bookmark that matched a search query.
+type SearchResult struct {
+	ID       int               `json:"-"`
+	Bookmark internal.Bookmark `json:"bookmark"`
+	Match    string            `json:"match"`
+}
+
+// Search searches bookmarks using a regex pattern.
+func (c *Client) Search(query string) (map[int]SearchResult, error) {
+	// Build URL with query parameter
+	path := fmt.Sprintf("/bookmarks?q=%s", query)
+
+	// Response format: map[int]map[string]interface{}
+	var rawResponse map[int]map[string]interface{}
+
+	err := c.doWithRetry("GET", path, nil, http.StatusOK, &rawResponse)
+	if err != nil {
+		return nil, fmt.Errorf("search bookmarks: %w", err)
+	}
+
+	// Convert to SearchResult format
+	results := make(map[int]SearchResult)
+	for id, data := range rawResponse {
+		// Marshal and unmarshal to convert map to Bookmark
+		bookmarkData, _ := json.Marshal(data["bookmark"])
+		var bookmark internal.Bookmark
+		json.Unmarshal(bookmarkData, &bookmark)
+
+		match := ""
+		if m, ok := data["match"].(string); ok {
+			match = m
+		}
+
+		results[id] = SearchResult{
+			ID:       id,
+			Bookmark: bookmark,
+			Match:    match,
+		}
+	}
+
+	return results, nil
+}
+
 // Get retrieves a bookmark by ID.
 func (c *Client) Get(id int) (*internal.Bookmark, error) {
 	var bookmark internal.Bookmark
