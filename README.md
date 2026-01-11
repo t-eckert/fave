@@ -6,6 +6,23 @@
 
 Fave is a tiny bookmark manager written in Go. There are many like it, but this one is mine.
 
+## Claude Code Integration
+
+Fave includes a **Claude Code skill** that lets you manage bookmarks using natural language! The skill provides intelligent content analysis, automatic tag generation, and seamless bookmark management.
+
+**Quick Install:**
+```
+/plugin marketplace add t-eckert/fave
+/plugin install fave@fave-marketplace
+```
+
+Then use natural language like:
+- "Add this to my faves" (when discussing a URL)
+- "Search my bookmarks for golang"
+- "Show me all my bookmarks"
+
+See [MARKETPLACE.md](MARKETPLACE.md) for full documentation on using Fave with Claude Code.
+
 ## Features
 
 ### Server

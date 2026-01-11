@@ -1,0 +1,28 @@
+{
+  "name": "fave-marketplace",
+  "owner": {
+    "name": "Thomas Eckert",
+    "email": "thomas.james.eckert@gmail.com"
+  },
+  "metadata": {
+    "description": "Claude Code skills for the Fave bookmark manager",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "fave",
+      "source": "./plugins/fave",
+      "description": "Interact with the Fave bookmark manager to add, list, search, update, and delete bookmarks with intelligent content analysis",
+      "version": "1.0.0",
+      "author": {
+        "name": "Thomas Eckert",
+        "email": "thomas.james.eckert@gmail.com"
+      },
+      "homepage": "https://github.com/t-eckert/fave",
+      "repository": "https://github.com/t-eckert/fave",
+      "license": "MIT",
+      "keywords": ["bookmarks", "bookmark-manager", "fave", "productivity"],
+      "category": "productivity"
+    }
+  ]
+}
